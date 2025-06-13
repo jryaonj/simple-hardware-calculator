@@ -37,19 +37,14 @@ jobs:
       - name: Build project
         run: npm run build -- --base=/${{ github.event.repository.name }}/
 
-      # 4. Build
-      # vite build will output to dist/client by default
-      # - run: PUBLIC_URL=/${{ github.event.repository.name }} npm run build
-      # - run: npm run build -- --base=/${{ github.event.repository.name }}/
-
-      # 5. Configure Pages metadata (required by Pages deployments)
+      # Configure Pages metadata (required by Pages deployments)
       - uses: actions/configure-pages@v5   # current major version
 
-      # 6. Deploy
+      # Deploy
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: dist/client
+          publish_dir: dist
           destination_dir: .
           force_orphan: true
