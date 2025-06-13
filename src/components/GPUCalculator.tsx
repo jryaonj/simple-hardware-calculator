@@ -1,275 +1,337 @@
 import { useState, useEffect } from 'react';
-import { Info, Zap, MemoryStick, Gamepad2, ChevronDown } from 'lucide-react';
-import { gpuDatabase } from '../data/gpuData';
-import { calculateGPUPerformance } from '../utils/calculations';
-import type { GPUSpec, GPUPerformanceResult } from '../types';
+import { Cpu, Zap, Monitor, Info, ChevronDown } from 'lucide-react';
 
-export default function GPUCalculator() {
-  const [selectedGPU, setSelectedGPU] = useState<GPUSpec>(gpuDatabase[0]);
-  const [customMode, setCustomMode] = useState(false);
-  const [customGPU, setCustomGPU] = useState<GPUSpec>({
-    name: 'Custom GPU',
-    streamProcessors: 3584,
-    baseFrequency: 1500,
-    memoryBandwidth: 500,
-    vramGB: 12,
-    architecture: 'Custom',
-    manufacturer: 'nvidia'
-  });
-  const [results, setResults] = useState<GPUPerformanceResult | null>(null);
+interface GPUModel {
+  name: string;
+  cores: number;
+  baseFreq: number;
+  architecture: string;
+  company: 'nvidia' | 'amd';
+}
 
-  const currentGPU = customMode ? customGPU : selectedGPU;
+interface PerformanceLevel {
+  level: string;
+  min: number;
+  max: number;
+  color: string;
+  description: string;
+}
+
+const gpuModels: GPUModel[] = [
+  { name: 'GeForce GTX 1080 Ti', cores: 3584, baseFreq: 1481, architecture: 'Pascal', company: 'nvidia' },
+  { name: 'GeForce RTX 3060', cores: 3584, baseFreq: 1320, architecture: 'Ampere', company: 'nvidia' },
+  { name: 'GeForce RTX 3070', cores: 5888, baseFreq: 1500, architecture: 'Ampere', company: 'nvidia' },
+  { name: 'GeForce RTX 3080', cores: 8704, baseFreq: 1440, architecture: 'Ampere', company: 'nvidia' },
+  { name: 'GeForce RTX 3090', cores: 10496, baseFreq: 1395, architecture: 'Ampere', company: 'nvidia' },
+  { name: 'GeForce RTX 4060', cores: 3072, baseFreq: 1830, architecture: 'Ada Lovelace', company: 'nvidia' },
+  { name: 'GeForce RTX 4070', cores: 5888, baseFreq: 1920, architecture: 'Ada Lovelace', company: 'nvidia' },
+  { name: 'GeForce RTX 4080', cores: 9728, baseFreq: 2205, architecture: 'Ada Lovelace', company: 'nvidia' },
+  { name: 'GeForce RTX 4090', cores: 16384, baseFreq: 2230, architecture: 'Ada Lovelace', company: 'nvidia' },
+  { name: 'Radeon RX 6600', cores: 1792, baseFreq: 1968, architecture: 'RDNA 2', company: 'amd' },
+  { name: 'Radeon RX 6700 XT', cores: 2560, baseFreq: 2424, architecture: 'RDNA 2', company: 'amd' },
+  { name: 'Radeon RX 6800', cores: 3840, baseFreq: 1815, architecture: 'RDNA 2', company: 'amd' },
+  { name: 'Radeon RX 6900 XT', cores: 5120, baseFreq: 2015, architecture: 'RDNA 2', company: 'amd' },
+  { name: 'Radeon RX 7700 XT', cores: 3456, baseFreq: 2171, architecture: 'RDNA 3', company: 'amd' },
+  { name: 'Radeon RX 7800 XT', cores: 3840, baseFreq: 2124, architecture: 'RDNA 3', company: 'amd' },
+  { name: 'Radeon RX 7900 XTX', cores: 6144, baseFreq: 2230, architecture: 'RDNA 3', company: 'amd' },
+];
+
+const performanceLevels: PerformanceLevel[] = [
+  { level: 'Low', min: 0, max: 8, color: 'text-red-600', description: 'Entry-level gaming performance' },
+  { level: 'Medium', min: 8, max: 15, color: 'text-yellow-600', description: 'Good for 1080p gaming' },
+  { level: 'High', min: 15, max: 25, color: 'text-blue-600', description: 'Excellent for 1440p gaming' },
+  { level: 'Extreme', min: 25, max: 100, color: 'text-green-600', description: 'Top-tier 4K gaming' },
+];
+
+function GPUCalculator() {
+  const [useCustom, setUseCustom] = useState(false);
+  const [selectedGPU, setSelectedGPU] = useState<GPUModel | null>(gpuModels[0]);
+  const [cores, setCores] = useState(3584);
+  const [baseFreq, setBaseFreq] = useState(1481);
+  const [customFreq, setCustomFreq] = useState(1481);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
-    const result = calculateGPUPerformance(currentGPU);
-    setResults(result);
-  }, [currentGPU]);
+    if (selectedGPU && !useCustom) {
+      setCores(selectedGPU.cores);
+      setBaseFreq(selectedGPU.baseFreq);
+      setCustomFreq(selectedGPU.baseFreq);
+    }
+  }, [selectedGPU, useCustom]);
 
-  const getPerformanceLevel = (tflops: number) => {
-    if (tflops < 1) return { level: 'Very Low', color: 'text-error', bg: 'bg-error/10' };
-    if (tflops < 8) return { level: 'Basic', color: 'text-warning', bg: 'bg-warning/10' };
-    if (tflops < 15) return { level: 'Good', color: 'text-info', bg: 'bg-info/10' };
-    if (tflops < 25) return { level: 'High', color: 'text-success', bg: 'bg-success/10' };
-    return { level: 'Extreme', color: 'text-primary', bg: 'bg-primary/10' };
+  const calculateTFLOPS = () => {
+    const frequency = useCustom ? customFreq : baseFreq;
+    return (cores * frequency * 2) / 1_000_000;
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="card bg-base-200 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title text-2xl mb-2">
-            <Zap className="w-6 h-6" />
-            GPU FP32/16 Performance Calculator
-          </h2>
-          <p className="text-base-content/70">
-            Calculate GPU TFLOPS performance based on specifications. 
-            Formula: stream_processors × base_frequency × 2 (FMA operations) ÷ 1,000,000
-          </p>
-        </div>
-      </div>
+  const handleCalculate = () => {
+    setIsCalculating(true);
+    setTimeout(() => {
+      setIsCalculating(false);
+    }, 300);
+  };
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input Panel */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h3 className="card-title mb-4">GPU Configuration</h3>
-            
-            {/* Mode Toggle */}
-            <div className="form-control mb-4">
-              <label className="label cursor-pointer">
-                <span className="label-text">Use Custom GPU Specifications</span>
-                <input 
-                  type="checkbox" 
-                  className="toggle toggle-primary" 
-                  checked={customMode}
-                  onChange={(e) => setCustomMode(e.target.checked)}
+  const tflops = calculateTFLOPS();
+  const performanceLevel = performanceLevels.find(level => 
+    tflops >= level.min && tflops < level.max
+  ) || performanceLevels[performanceLevels.length - 1];
+
+  const getGamingEstimates = () => {
+    const fp1080 = Math.round((tflops / 8) * 60);
+    const fp1440 = Math.round((tflops / 12) * 60);
+    const fp4k = Math.round((tflops / 20) * 60);
+    
+    return {
+      '1080p': Math.min(fp1080, 165),
+      '1440p': Math.min(fp1440, 120),
+      '4K': Math.min(fp4k, 90)
+    };
+  };
+
+  const gamingEstimates = getGamingEstimates();
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Configuration Card */}
+      <div className="card-clean animate-fade-in">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Cpu className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">GPU Configuration</h2>
+              <p className="text-sm text-gray-500">Select GPU model or set custom specifications</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Custom GPU Toggle */}
+            <div className="form-group">
+              <label className="toggle-clean">
+                <input
+                  type="checkbox"
+                  checked={useCustom}
+                  onChange={(e) => setUseCustom(e.target.checked)}
                 />
+                <span className="toggle-slider"></span>
+                <span className="ml-3 text-sm font-medium text-gray-700">
+                  Use Custom GPU Specifications
+                </span>
               </label>
             </div>
 
-            {!customMode ? (
-              /* Predefined GPU Selection */
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Select GPU</span>
-                </label>
-                <div className="dropdown dropdown-bottom w-full">
-                  <div tabIndex={0} role="button" className="btn btn-outline w-full justify-between">
+            {/* GPU Model Selection */}
+            {!useCustom && (
+              <div className="form-group">
+                <label className="form-label">Select GPU Model</label>
+                <div className="dropdown-clean">
+                  <button
+                    className="dropdown-trigger"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                  >
                     <div className="flex items-center gap-2">
                       <div className={`w-3 h-3 rounded-full ${
-                        selectedGPU.manufacturer === 'nvidia' ? 'bg-green-500' : 
-                        selectedGPU.manufacturer === 'amd' ? 'bg-red-500' : 'bg-blue-500'
+                        selectedGPU?.company === 'nvidia' ? 'bg-green-500' : 'bg-red-500'
                       }`}></div>
-                      {selectedGPU.name}
+                      <span>{selectedGPU?.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {selectedGPU?.architecture} • {selectedGPU?.cores.toLocaleString()} cores
+                      </span>
                     </div>
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                  <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-full max-h-60 overflow-y-auto">
-                    {gpuDatabase.map((gpu) => (
-                      <li key={gpu.name}>
-                        <a onClick={() => setSelectedGPU(gpu)} className="flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${
-                            gpu.manufacturer === 'nvidia' ? 'bg-green-500' : 
-                            gpu.manufacturer === 'amd' ? 'bg-red-500' : 'bg-blue-500'
-                          }`}></div>
-                          <div>
-                            <div className="font-medium">{gpu.name}</div>
-                            <div className="text-xs opacity-70">{gpu.architecture}</div>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {dropdownOpen && (
+                    <div className="dropdown-menu">
+                      {gpuModels.map((gpu) => (
+                        <div
+                          key={gpu.name}
+                          className="dropdown-item"
+                          onClick={() => {
+                            setSelectedGPU(gpu);
+                            setDropdownOpen(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              gpu.company === 'nvidia' ? 'bg-green-500' : 'bg-red-500'
+                            }`}></div>
+                            <div>
+                              <div className="text-sm font-medium">{gpu.name}</div>
+                              <div className="text-xs text-gray-500">
+                                {gpu.architecture} • {gpu.cores.toLocaleString()} cores
+                              </div>
+                            </div>
                           </div>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ) : (
-              /* Custom GPU Inputs */
-              <div className="space-y-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">GPU Name</span>
-                  </label>
-                  <input 
-                    type="text" 
-                    className="input input-bordered" 
-                    value={customGPU.name}
-                    onChange={(e) => setCustomGPU({...customGPU, name: e.target.value})}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">Stream Processors</span>
-                    </label>
-                    <input 
-                      type="number" 
-                      className="input input-bordered" 
-                      value={customGPU.streamProcessors}
-                      onChange={(e) => setCustomGPU({...customGPU, streamProcessors: parseInt(e.target.value) || 0})}
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">Base Frequency (MHz)</span>
-                    </label>
-                    <input 
-                      type="number" 
-                      className="input input-bordered" 
-                      value={customGPU.baseFrequency}
-                      onChange={(e) => setCustomGPU({...customGPU, baseFrequency: parseInt(e.target.value) || 0})}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">Memory Bandwidth (GB/s)</span>
-                    </label>
-                    <input 
-                      type="number" 
-                      className="input input-bordered" 
-                      value={customGPU.memoryBandwidth}
-                      onChange={(e) => setCustomGPU({...customGPU, memoryBandwidth: parseInt(e.target.value) || 0})}
-                    />
-                  </div>
-
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text">VRAM (GB)</span>
-                    </label>
-                    <input 
-                      type="number" 
-                      className="input input-bordered" 
-                      value={customGPU.vramGB}
-                      onChange={(e) => setCustomGPU({...customGPU, vramGB: parseInt(e.target.value) || 0})}
-                    />
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
 
-            {/* GPU Specs Display */}
-            <div className="card bg-base-200 mt-4">
-              <div className="card-body">
-                <h4 className="font-semibold mb-2">Current GPU Specifications</h4>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>Stream Processors: <span className="font-medium">{currentGPU.streamProcessors.toLocaleString()}</span></div>
-                  <div>Base Clock: <span className="font-medium">{currentGPU.baseFrequency} MHz</span></div>
-                  <div>Memory BW: <span className="font-medium">{currentGPU.memoryBandwidth} GB/s</span></div>
-                  <div>VRAM: <span className="font-medium">{currentGPU.vramGB} GB</span></div>
+            {/* Custom Specifications */}
+            {useCustom && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="form-label">Stream Processors</label>
+                  <input
+                    type="number"
+                    className="input-clean"
+                    value={cores}
+                    onChange={(e) => setCores(Number(e.target.value))}
+                    placeholder="e.g., 3584"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Base Frequency (MHz)</label>
+                  <input
+                    type="number"
+                    className="input-clean"
+                    value={baseFreq}
+                    onChange={(e) => setBaseFreq(Number(e.target.value))}
+                    placeholder="e.g., 1481"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Custom Frequency */}
+            <div className="form-group">
+              <label className="form-label">
+                Custom Frequency (MHz)
+                <span className="text-xs text-gray-500 ml-2">
+                  Override for overclocking scenarios
+                </span>
+              </label>
+              <input
+                type="number"
+                className="input-clean"
+                value={customFreq}
+                onChange={(e) => setCustomFreq(Number(e.target.value))}
+                placeholder="e.g., 1600"
+              />
+            </div>
+
+            <button
+              className="btn-clean w-full"
+              onClick={handleCalculate}
+              disabled={isCalculating}
+            >
+              {isCalculating ? (
+                <>
+                  <div className="loading-spinner"></div>
+                  Calculating...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Calculate Performance
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Card */}
+      <div className="card-clean animate-slide-in">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Monitor className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Performance Results</h2>
+              <p className="text-sm text-gray-500">Computational power analysis</p>
+            </div>
+          </div>
+
+          {/* Main Result */}
+          <div className="result-card-clean mb-6">
+            <div className="result-main">{tflops.toFixed(2)}</div>
+            <div className="result-label">FP32 TFLOPS</div>
+            <div className={`result-badge ${performanceLevel.level === 'Extreme' ? 'success' : 
+              performanceLevel.level === 'High' ? 'info' : 'warning'}`}>
+              {performanceLevel.level} Performance
+            </div>
+          </div>
+
+          {/* Performance Level */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Performance Level</span>
+              <span className={`text-sm font-medium ${performanceLevel.color}`}>
+                {performanceLevel.level}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((tflops / 30) * 100, 100)}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{performanceLevel.description}</p>
+          </div>
+
+          {/* Gaming Performance Estimates */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Monitor className="w-4 h-4 text-gray-600" />
+              <span className="font-medium text-gray-900">Gaming Performance Estimate</span>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              {Object.entries(gamingEstimates).map(([resolution, fps]) => (
+                <div key={resolution} className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-lg font-semibold text-gray-900">{fps}</div>
+                  <div className="text-xs text-gray-500">FPS</div>
+                  <div className="text-xs font-medium text-gray-700">{resolution}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Technical Details */}
+          <button
+            className="btn-outline-clean w-full mt-6"
+            onClick={() => setShowDetails(!showDetails)}
+          >
+            <Info className="w-4 h-4" />
+            {showDetails ? 'Hide' : 'Show'} Technical Details
+            <ChevronDown className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showDetails && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg animate-fade-in">
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Formula:</span>
+                  <span className="font-mono text-xs">cores × frequency × 2 (FMA)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Stream Processors:</span>
+                  <span>{cores.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Frequency:</span>
+                  <span>{customFreq} MHz</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">FP16 TFLOPS:</span>
+                  <span>{(tflops * 2).toFixed(2)}</span>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Results Panel */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h3 className="card-title mb-4">Performance Results</h3>
-            
-            {results && (
-              <div className="space-y-4">
-                {/* FP32 Performance */}
-                <div className="card bg-gradient-to-r from-primary/10 to-primary/5">
-                  <div className="card-body">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap className="w-5 h-5 text-primary" />
-                      <h4 className="font-semibold">FP32 Performance</h4>
-                    </div>
-                    <div className="text-3xl font-bold text-primary mb-1">
-                      {results.fp32TFLOPS} TFLOPS
-                    </div>
-                    <div className={`badge ${getPerformanceLevel(results.fp32TFLOPS).bg} ${getPerformanceLevel(results.fp32TFLOPS).color}`}>
-                      {getPerformanceLevel(results.fp32TFLOPS).level}
-                    </div>
-                  </div>
-                </div>
-
-                {/* FP16 Performance */}
-                <div className="card bg-gradient-to-r from-secondary/10 to-secondary/5">
-                  <div className="card-body">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap className="w-5 h-5 text-secondary" />
-                      <h4 className="font-semibold">FP16 Performance</h4>
-                    </div>
-                    <div className="text-3xl font-bold text-secondary mb-1">
-                      {results.fp16TFLOPS} TFLOPS
-                    </div>
-                    <div className="text-sm text-base-content/70">
-                      ~2x FP32 performance (theoretical)
-                    </div>
-                  </div>
-                </div>
-
-                {/* Memory Bandwidth */}
-                <div className="card bg-gradient-to-r from-accent/10 to-accent/5">
-                  <div className="card-body">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MemoryStick className="w-5 h-5 text-accent" />
-                      <h4 className="font-semibold">Memory Bandwidth</h4>
-                    </div>
-                    <div className="text-2xl font-bold text-accent">
-                      {results.memoryBandwidthGBs} GB/s
-                    </div>
-                  </div>
-                </div>
-
-                {/* Gaming Performance Estimate */}
-                <div className="card bg-gradient-to-r from-info/10 to-info/5">
-                  <div className="card-body">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Gamepad2 className="w-5 h-5 text-info" />
-                      <h4 className="font-semibold">Gaming Score</h4>
-                    </div>
-                    <div className="text-2xl font-bold text-info mb-1">
-                      {results.estimatedGamingScore}
-                    </div>
-                    <div className="text-xs text-base-content/70">
-                      Estimated relative gaming performance
-                    </div>
-                  </div>
-                </div>
-
-                {/* Performance Guidelines */}
-                <div className="alert alert-info">
-                  <Info className="w-4 h-4" />
-                  <div className="text-sm">
-                    <div className="font-semibold mb-1">Performance Guidelines:</div>
-                    <div>• At least 1 TFLOPS for modern applications</div>
-                    <div>• At least 8 TFLOPS for fluent 1080p gaming</div>
-                    <div>• 15+ TFLOPS for high-end 1440p/4K gaming</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
-} 
+}
+
+export default GPUCalculator; 

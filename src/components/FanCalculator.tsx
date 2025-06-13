@@ -1,9 +1,23 @@
-import { useState, useEffect } from 'react';
-import { Fan, Volume2, Info, AlertTriangle } from 'lucide-react';
-import { calculateFanNoise, getOptimalFanRPM } from '../utils/calculations';
-import type { FanSpec, FanResult } from '../types';
+import { useState } from 'react';
+import { Fan, Volume2, Zap, Info, ChevronDown, BarChart3 } from 'lucide-react';
 
-export default function FanCalculator() {
+interface FanSpec {
+  diameter: number;
+  thickness: number;
+  wings: number;
+  maxRPM: number;
+  currentRPM: number;
+}
+
+const fanSizes = [
+  { diameter: 80, thickness: 25, name: '80mm Standard' },
+  { diameter: 92, thickness: 25, name: '92mm Standard' },
+  { diameter: 120, thickness: 25, name: '120mm Standard' },
+  { diameter: 140, thickness: 25, name: '140mm Standard' },
+  { diameter: 200, thickness: 30, name: '200mm Large' },
+];
+
+function FanCalculator() {
   const [fanSpec, setFanSpec] = useState<FanSpec>({
     diameter: 120,
     thickness: 25,
@@ -11,238 +25,308 @@ export default function FanCalculator() {
     maxRPM: 1500,
     currentRPM: 800
   });
-  const [results, setResults] = useState<FanResult | null>(null);
-  const [optimalRPM, setOptimalRPM] = useState<number>(0);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
 
-  useEffect(() => {
-    const result = calculateFanNoise(fanSpec);
-    const optimal = getOptimalFanRPM(fanSpec.wings);
-    setResults(result);
-    setOptimalRPM(optimal);
-  }, [fanSpec]);
-
-  const getNoiseColor = (level: string) => {
-    switch (level) {
-      case 'quiet': return 'text-success';
-      case 'acceptable': return 'text-warning';
-      case 'noisy': return 'text-error';
-      default: return 'text-base-content';
-    }
+  const calculateFanNoise = () => {
+    // Frequency = (RPM ÷ 60) × number_of_wings
+    const frequency = (fanSpec.currentRPM / 60) * fanSpec.wings;
+    return Math.round(frequency * 10) / 10;
   };
 
-  const getNoiseIcon = (level: string) => {
-    switch (level) {
-      case 'quiet': return <Volume2 className="w-4 h-4 text-success" />;
-      case 'acceptable': return <Volume2 className="w-4 h-4 text-warning" />;
-      case 'noisy': return <AlertTriangle className="w-4 h-4 text-error" />;
-      default: return <Volume2 className="w-4 h-4" />;
-    }
+  const getOptimalRPM = () => {
+    // Optimal frequency for acceptable noise is typically < 65Hz
+    const targetFreq = 65;
+    return Math.round((targetFreq * 60) / fanSpec.wings);
   };
+
+  const getNoiseLevel = () => {
+    const frequency = calculateFanNoise();
+    if (frequency < 40) return { level: 'Quiet', color: 'text-green-600', description: 'Barely audible' };
+    if (frequency < 65) return { level: 'Acceptable', color: 'text-blue-600', description: 'Comfortable for most users' };
+    if (frequency < 100) return { level: 'Noticeable', color: 'text-yellow-600', description: 'Clearly audible' };
+    return { level: 'Noisy', color: 'text-red-600', description: 'Potentially disturbing' };
+  };
+
+  const handleCalculate = () => {
+    setIsCalculating(true);
+    setTimeout(() => {
+      setIsCalculating(false);
+    }, 300);
+  };
+
+  const frequency = calculateFanNoise();
+  const optimalRPM = getOptimalRPM();
+  const noiseLevel = getNoiseLevel();
+
+  const selectedFanSize = fanSizes.find(f => f.diameter === fanSpec.diameter) || fanSizes[2];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="card bg-base-200 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title text-2xl mb-2">
-            <Fan className="w-6 h-6" />
-            Fan Speed & Noise Calculator
-          </h2>
-          <p className="text-base-content/70">
-            Calculate fan noise frequency and get recommendations. 
-            Formula: (RPM ÷ 60) × number_of_wings = frequency (Hz)
-          </p>
-        </div>
-      </div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Configuration Card */}
+      <div className="card-clean animate-fade-in">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+              <Fan className="w-5 h-5 text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Fan Configuration</h2>
+              <p className="text-sm text-gray-500">Configure fan specs and RPM settings</p>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input Panel */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h3 className="card-title mb-4">Fan Specifications</h3>
-            
-            <div className="space-y-4">
-              {/* Fan Size */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Diameter (mm)</span>
-                  </label>
-                  <select 
-                    className="select select-bordered"
-                    value={fanSpec.diameter}
-                    onChange={(e) => setFanSpec(prev => ({ 
-                      ...prev, 
-                      diameter: parseInt(e.target.value) 
-                    }))}
-                  >
-                    <option value={80}>80mm</option>
-                    <option value={92}>92mm</option>
-                    <option value={120}>120mm</option>
-                    <option value={140}>140mm</option>
-                    <option value={200}>200mm</option>
-                  </select>
-                </div>
-
-                <div className="form-control">
-                  <label className="label">
-                    <span className="label-text">Thickness (mm)</span>
-                  </label>
-                  <select 
-                    className="select select-bordered"
-                    value={fanSpec.thickness}
-                    onChange={(e) => setFanSpec(prev => ({ 
-                      ...prev, 
-                      thickness: parseInt(e.target.value) 
-                    }))}
-                  >
-                    <option value={10}>10mm</option>
-                    <option value={15}>15mm</option>
-                    <option value={25}>25mm</option>
-                    <option value={38}>38mm</option>
-                  </select>
-                </div>
+          <div className="space-y-6">
+            {/* Fan Size Selection */}
+            <div className="form-group">
+              <label className="form-label">Fan Size</label>
+              <div className="dropdown-clean">
+                <button
+                  className="dropdown-trigger"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                    <span>{selectedFanSize.name}</span>
+                    <span className="text-xs text-gray-500">
+                      {fanSpec.diameter}×{fanSpec.thickness}mm
+                    </span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {dropdownOpen && (
+                  <div className="dropdown-menu">
+                    {fanSizes.map((size) => (
+                      <div
+                        key={size.diameter}
+                        className="dropdown-item"
+                        onClick={() => {
+                          setFanSpec(prev => ({
+                            ...prev,
+                            diameter: size.diameter,
+                            thickness: size.thickness
+                          }));
+                          setDropdownOpen(false);
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                          <div>
+                            <div className="text-sm font-medium">{size.name}</div>
+                            <div className="text-xs text-gray-500">
+                              {size.diameter}×{size.thickness}mm
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Fan Properties */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Number of Wings</span>
-                </label>
-                <input 
-                  type="range" 
-                  min="5" 
-                  max="13" 
+            {/* Fan Wings */}
+            <div className="form-group">
+              <label className="form-label">
+                Number of Wings
+                <span className="text-xs text-gray-500 ml-2">
+                  {fanSpec.wings} wings
+                </span>
+              </label>
+              <div className="relative">
+                <input
+                  type="range"
+                  min="5"
+                  max="13"
                   value={fanSpec.wings}
-                  className="range range-primary"
                   onChange={(e) => setFanSpec(prev => ({ 
                     ...prev, 
                     wings: parseInt(e.target.value) 
                   }))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                 />
-                <div className="text-center text-sm mt-1">{fanSpec.wings} wings</div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>5</span>
+                  <span>9</span>
+                  <span>13</span>
+                </div>
               </div>
+            </div>
 
-              {/* RPM Settings */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Current RPM</span>
-                </label>
-                <input 
-                  type="range" 
-                  min="200" 
-                  max={fanSpec.maxRPM} 
+            {/* Maximum RPM */}
+            <div className="form-group">
+              <label className="form-label">Maximum RPM</label>
+              <input
+                type="number"
+                className="input-clean"
+                value={fanSpec.maxRPM}
+                onChange={(e) => setFanSpec(prev => ({
+                  ...prev,
+                  maxRPM: parseInt(e.target.value) || 1500,
+                  currentRPM: Math.min(prev.currentRPM, parseInt(e.target.value) || 1500)
+                }))}
+                placeholder="e.g., 1500"
+              />
+            </div>
+
+            {/* Current RPM */}
+            <div className="form-group">
+              <label className="form-label">
+                Current RPM
+                <span className="text-xs text-gray-500 ml-2">
+                  {fanSpec.currentRPM} RPM
+                </span>
+              </label>
+              <div className="relative">
+                <input
+                  type="range"
+                  min="200"
+                  max={fanSpec.maxRPM}
                   value={fanSpec.currentRPM}
-                  className="range range-secondary"
                   onChange={(e) => setFanSpec(prev => ({ 
                     ...prev, 
                     currentRPM: parseInt(e.target.value) 
                   }))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                 />
-                <div className="text-center text-sm mt-1">{fanSpec.currentRPM} RPM</div>
-              </div>
-
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Maximum RPM</span>
-                </label>
-                <input 
-                  type="number" 
-                  className="input input-bordered" 
-                  value={fanSpec.maxRPM}
-                  onChange={(e) => setFanSpec(prev => ({ 
-                    ...prev, 
-                    maxRPM: parseInt(e.target.value) || 1500,
-                    currentRPM: Math.min(prev.currentRPM, parseInt(e.target.value) || 1500)
-                  }))}
-                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>200</span>
+                  <span>{Math.round(fanSpec.maxRPM / 2)}</span>
+                  <span>{fanSpec.maxRPM}</span>
+                </div>
               </div>
             </div>
+
+            <button
+              className="btn-clean w-full"
+              onClick={handleCalculate}
+              disabled={isCalculating}
+            >
+              {isCalculating ? (
+                <>
+                  <div className="loading-spinner"></div>
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  Analyze Fan Noise
+                </>
+              )}
+            </button>
           </div>
         </div>
+      </div>
 
-        {/* Results Panel */}
-        <div className="card bg-base-100 shadow-xl">
-          <div className="card-body">
-            <h3 className="card-title mb-4">Noise Analysis</h3>
+      {/* Results Card */}
+      <div className="card-clean animate-slide-in">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Volume2 className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Noise Analysis</h2>
+              <p className="text-sm text-gray-500">Fan noise frequency and recommendations</p>
+            </div>
+          </div>
+
+          {/* Main Result */}
+          <div className="result-card-clean mb-6">
+            <div className="result-main">{frequency}</div>
+            <div className="result-label">Hz Frequency</div>
+            <div className={`result-badge ${noiseLevel.level === 'Quiet' ? 'success' : 
+              noiseLevel.level === 'Acceptable' ? 'info' : 'warning'}`}>
+              {noiseLevel.level} Level
+            </div>
+          </div>
+
+          {/* Noise Level */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Noise Level</span>
+              <span className={`text-sm font-medium ${noiseLevel.color}`}>
+                {noiseLevel.level}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-orange-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((frequency / 120) * 100, 100)}%` }}
+              ></div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">{noiseLevel.description}</p>
+          </div>
+
+          {/* Optimal RPM Recommendation */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-gray-600" />
+              <span className="font-medium text-gray-900">Optimization</span>
+            </div>
             
-            {results && (
-              <div className="space-y-4">
-                {/* Frequency Result */}
-                <div className="card bg-gradient-to-r from-primary/10 to-primary/5">
-                  <div className="card-body">
-                    <div className="flex items-center gap-2 mb-2">
-                      {getNoiseIcon(results.noiseLevel)}
-                      <h4 className="font-semibold">Audio Frequency</h4>
-                    </div>
-                    <div className="text-3xl font-bold text-primary mb-1">
-                      {results.frequency} Hz
-                    </div>
-                    <div className={`badge badge-lg ${getNoiseColor(results.noiseLevel)}`}>
-                      {results.noiseLevel.toUpperCase()}
-                    </div>
-                  </div>
-                </div>
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-800">Optimal RPM</span>
+                <span className="text-lg font-semibold text-blue-900">{optimalRPM}</span>
+              </div>
+              <p className="text-xs text-blue-600">
+                For acceptable noise level (&lt; 65Hz)
+              </p>
+            </div>
 
-                {/* Optimal RPM */}
-                <div className="card bg-gradient-to-r from-success/10 to-success/5">
-                  <div className="card-body">
-                    <h4 className="font-semibold mb-2">Optimal RPM</h4>
-                    <div className="text-2xl font-bold text-success">
-                      {optimalRPM} RPM
-                    </div>
-                    <div className="text-sm text-base-content/70">
-                      For acceptable noise (&lt; 65Hz)
-                    </div>
-                  </div>
-                </div>
-
-                {/* Current vs Optimal */}
-                <div className="stats stats-vertical shadow">
-                  <div className="stat">
-                    <div className="stat-title">Current Setting</div>
-                    <div className="stat-value text-lg">{fanSpec.currentRPM} RPM</div>
-                    <div className="stat-desc">{results.frequency} Hz</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-title">Recommended</div>
-                    <div className="stat-value text-lg">{optimalRPM} RPM</div>
-                    <div className="stat-desc">&lt; 65 Hz</div>
-                  </div>
-                </div>
-
-                {/* Recommendations */}
-                {results.recommendations.length > 0 && (
-                  <div className="card bg-base-200">
-                    <div className="card-body">
-                      <h4 className="font-semibold mb-2">Recommendations</h4>
-                      <ul className="space-y-1 text-sm">
-                        {results.recommendations.map((rec, index) => (
-                          <li key={index} className="flex items-start gap-2">
-                            <Info className="w-4 h-4 mt-0.5 text-info flex-shrink-0" />
-                            {rec}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-
-                {/* Reference Guide */}
-                <div className="alert alert-info">
-                  <Info className="w-4 h-4" />
-                  <div className="text-sm">
-                    <div className="font-semibold mb-1">Noise Guidelines:</div>
-                    <div>• &lt; 50 Hz: Excellent for quiet operation</div>
-                    <div>• 50-65 Hz: Good balance of cooling and noise</div>
-                    <div>• &gt; 65 Hz: May be audibly noticeable</div>
-                  </div>
+            {fanSpec.currentRPM > optimalRPM && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="text-sm font-medium text-yellow-800">Recommendation</div>
+                <div className="text-xs text-yellow-600">
+                  Consider reducing RPM by {fanSpec.currentRPM - optimalRPM} for quieter operation
                 </div>
               </div>
             )}
           </div>
+
+          {/* Technical Details */}
+          <button
+            className="btn-outline-clean w-full mt-6"
+            onClick={() => setShowDetails(!showDetails)}
+          >
+            <Info className="w-4 h-4" />
+            {showDetails ? 'Hide' : 'Show'} Technical Details
+            <ChevronDown className={`w-4 h-4 transition-transform ${showDetails ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showDetails && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg animate-fade-in">
+              <div className="text-sm space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Formula:</span>
+                  <span className="font-mono text-xs">(RPM ÷ 60) × wings</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Fan Size:</span>
+                  <span>{fanSpec.diameter}×{fanSpec.thickness}mm</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Wings:</span>
+                  <span>{fanSpec.wings}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Current RPM:</span>
+                  <span>{fanSpec.currentRPM}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Frequency:</span>
+                  <span>{frequency} Hz</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
-} 
+}
+
+export default FanCalculator; 
