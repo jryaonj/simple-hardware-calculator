@@ -1,54 +1,104 @@
-# React + TypeScript + Vite
+# Primary School Calc - Hardware Calculator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A comprehensive hardware performance calculator app built with React, TypeScript, and DaisyUI. This application provides "primary school" level calculations for various hardware components with easy-to-understand formulas and results.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🎮 GPU Performance Calculator
+- **FP32/FP16 TFLOPS calculation** based on stream processors and frequency
+- **Gaming performance estimation** with performance level indicators
+- **Memory bandwidth analysis**
+- **Custom GPU specifications** support
+- Formula: `stream_processors × base_frequency × 2 (FMA operations) ÷ 1,000,000`
 
-## Expanding the ESLint configuration
+### 💾 Memory Bandwidth Calculator
+- **DDR3/DDR4/DDR5 support** with common frequency presets
+- **Multi-channel configurations** (1, 2, 4, 8, 12 channels)
+- **Real-time bandwidth calculation** in MT/s and GB/s
+- Formula: `frequency × 64 bits × channels ÷ 8 bits per byte`
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 🌀 Fan Speed & Noise Calculator
+- **Noise frequency calculation** from RPM and wing count
+- **Optimal RPM recommendations** for acceptable noise levels
+- **Fan size and thickness considerations**
+- **Real-time noise level assessment** (Quiet/Acceptable/Noisy)
+- Formula: `(RPM ÷ 60) × number_of_wings = frequency (Hz)`
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+### 💿 HDD Noise Estimation Calculator
+- **Acoustic analysis** based on real HDD specifications
+- **Multiple drive configurations** with combined noise calculation
+- **Equal-loudness contour adjustments** for different frequencies
+- **Preset configurations** from real Seagate drive specifications
+- **Effective loudness calculation** in sone units
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Technology Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **React 19** with TypeScript for type safety
+- **Vite** for fast development and building
+- **TailwindCSS** for utility-first styling
+- **DaisyUI** for beautiful, accessible components
+- **Lucide React** for consistent iconography
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## Quick Start
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Start development server:**
+   ```bash
+   npm run dev
+   ```
+
+3. **Build for production:**
+   ```bash
+   npm run build
+   ```
+
+## Hardware Examples
+
+### GPU Performance Examples
+- **GTX 1080 Ti**: 10.60 TFLOPS FP32
+- **RTX 3090**: 29.28 TFLOPS FP32  
+- **RX 7900 XTX**: 23.34 TFLOPS FP32
+
+### Memory Bandwidth Examples
+- **Dual DDR4-2666**: 42,656 MT/s
+- **Dual DDR5-5600**: 89,600 MT/s
+- **Octa DDR4-3200**: 204,800 MT/s
+
+### Fan Noise Guidelines
+- **< 50 Hz**: Excellent for quiet operation
+- **50-65 Hz**: Good balance of cooling and noise
+- **> 65 Hz**: May be audibly noticeable
+
+### HDD Acoustic Levels
+- **4TB 5400RPM**: 1.0 sone (baseline)
+- **8TB 7200RPM**: 2.3 sone (+1.3 sone)
+- **Multiple drives**: Logarithmic noise addition
+
+## Formulas Used
+
+All calculations are based on well-established hardware formulas:
+
+1. **GPU TFLOPS**: `(cores × frequency × 2) ÷ 1,000,000`
+2. **Memory Bandwidth**: `(frequency × 64 × channels) ÷ 8`
+3. **Fan Frequency**: `(RPM ÷ 60) × wings`
+4. **HDD Frequency**: `RPM ÷ 60`
+
+## Contributing
+
+This project welcomes contributions! Feel free to:
+- Add more GPU models to the database
+- Improve calculation accuracy
+- Add new calculator types
+- Enhance the UI/UX
+
+## License
+
+MIT License - feel free to use this project for educational purposes or as a reference for your own hardware calculations.
+
+---
+
+*Made with ❤️ for hardware enthusiasts who want to understand their systems better.*

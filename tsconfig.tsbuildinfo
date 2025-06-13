@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/FanCalculator.tsx","./src/components/GPUCalculator.tsx","./src/components/HDDCalculator.tsx","./src/components/MemoryCalculator.tsx","./src/data/gpuData.ts","./src/types/index.ts","./src/utils/calculations.ts"],"version":"5.8.3"}
