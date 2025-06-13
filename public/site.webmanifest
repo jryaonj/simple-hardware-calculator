@@ -1,7 +1,7 @@
 {
-  "name": "Primary School Calc - Hardware Performance Calculator",
-  "short_name": "Primary School Calc",
-  "description": "Professional hardware calculator for GPU performance, memory bandwidth, fan noise, and HDD acoustics. Calculate TFLOPS, DDR bandwidth, and optimize your build.",
+  "name": "Simple Hardware Calculator",
+  "short_name": "Hardware Calc",
+  "description": "Simple hardware calculator for GPU performance, memory bandwidth, fan noise, and HDD acoustics. Calculate TFLOPS, DDR bandwidth, and optimize your build.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1f2937",

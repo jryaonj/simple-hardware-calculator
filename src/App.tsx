@@ -76,7 +76,7 @@ function App() {
             
             {/* GitHub Fork Button */}
             <a
-              href="https://github.com/yourusername/simple-hardware-calculator"
+              href="https://github.com/jryaonj/simple-hardware-calculator"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all duration-200 hover:scale-105 text-sm font-medium"
@@ -138,7 +138,7 @@ function App() {
               <Heart className="w-4 h-4 text-red-500 animate-pulse" />
               <span>by</span>
               <a 
-                href="https://github.com/yourusername" 
+                href="https://github.com/jryaonj" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="font-medium text-blue-600 hover:text-blue-700 transition-colors"

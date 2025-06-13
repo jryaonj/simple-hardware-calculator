@@ -428,26 +428,7 @@ body {
   }
 }
 
-/* Remove all previous glass effects and excessive animations */
-.glass-effect,
-.navbar-enhanced,
-.tabs-enhanced,
-.btn-enhanced,
-.input-enhanced,
-.card-enhanced,
-.animate-glow,
-.animate-sparkle,
-.animate-wiggle,
-.animate-pulse-hover,
-.animate-bounce-in,
-.float-effect,
-.shimmer,
-.gradient-primary,
-.gradient-secondary,
-.gradient-accent,
-.gradient-success {
-  /* Reset to clean styles */
-}
+/* Note: Previous glass effects and excessive animations have been removed for cleaner styling */
 
 /* Clean slider styling */
 input[type="range"].slider {

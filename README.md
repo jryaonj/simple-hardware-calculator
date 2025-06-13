@@ -1,6 +1,6 @@
-# Primary School Calc - Hardware Calculator
+# Simple Hardware Calculator
 
-A comprehensive hardware performance calculator app built with React, TypeScript, and DaisyUI. This application provides "primary school" level calculations for various hardware components with easy-to-understand formulas and results.
+A comprehensive hardware performance calculator app built with React, TypeScript, and TailwindCSS. This application provides simple, easy-to-understand calculations for various hardware components with clear formulas and results.
 
 ## Features
 
