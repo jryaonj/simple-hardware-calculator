@@ -161,12 +161,21 @@ function App() {
                 </a>
                 <span className="text-gray-400">•</span>
                 <a
-                  href="https://tailwindcss.com"
+                  href="https://daisyui.com"
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
                 >
-                  Tailwind
+                  daisyUI
+                </a>
+                <span className="text-gray-400">•</span>
+                <a
+                  href="https://cursor.com"
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  CursorAI
                 </a>
               </div>
             </div>
